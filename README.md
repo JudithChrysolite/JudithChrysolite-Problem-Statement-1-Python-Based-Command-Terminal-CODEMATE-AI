@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Python Command Terminal with Flask Backend
 
 A web-based terminal emulator with a Flask backend that provides secure execution of filesystem and system commands.
@@ -33,25 +33,23 @@ A web-based terminal emulator with a Flask backend that provides secure executio
 
 1. Clone or download this repository
 2. Install the required dependencies:
-   ```bash
+   ```
    pip install -r requirements.txt
    ```
 
 ## Running the Application
 
 1. Start the Flask server:
-   ```bash
+   ```
    python app.py
    ```
-
 2. Open your web browser and navigate to `http://localhost:5000`
 
 ## API Endpoint
 
 The Flask backend exposes the following endpoint:
-
 - `POST /execute` - Accepts JSON with a command and returns structured results:
-  ```json
+  ```
   {
     "command": "ls",
     "cwd": "/home/user",
@@ -94,6 +92,4 @@ The application handles various error conditions:
 - Color-coded output (success/error)
 - Terminal prompt styling
 - Improved user experience with focused input and command history
-=======
-# Problem-Statement-1-Python-Based-Command-Terminal-CODEMATE-AI
->>>>>>> c4eccf80174571f155ffaae3610c48d59c90a422
+```
