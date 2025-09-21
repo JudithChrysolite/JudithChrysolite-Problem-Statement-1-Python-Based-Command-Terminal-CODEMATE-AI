@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Filesystem Terminal</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #3498db;
+            border-radius: 3px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #2980b9;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid #bdc3c7;
+            border-radius: 3px;
+            background-color: #f8f9fa;
+            white-space: pre-wrap;
+            min-height: 50px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .success {
+            color: #27ae60;
+        }
+        .cwd {
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 3px;
+            border-left: 4px solid #3498db;
+        }
+        .history {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #bdc3c7;
+        }
+        .history-item {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #e0e0e0;
+            border-radius: 2px;
+            font-size: 14px;
+        }
+        .terminal-prompt {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .command-input {
+            display: flex;
+            align-items: center;
+        }
+        .command-input input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Python Filesystem Terminal</h1>
+        <div class="cwd" id="current-directory">Current Directory: </div>
+        <form id="commandForm">
+            <div class="input-group">
+                <label for="command">Enter Command:</label>
+                <div class="command-input">
+                    <span class="terminal-prompt">user@python-terminal:~$</span>
+                    <input type="text" id="command" name="command" placeholder="e.g., ls, cd documents, pwd, mkdir test_folder" required>
+                </div>
+            </div>
+            <button type="submit">Execute</button>
+        </form>
+        <div id="output">Output will appear here...</div>
+        <div class="history" id="command-history"></div>
+        <div class="footer">
+            Python-based Terminal Emulator | Supports file operations, system monitoring, and process management
+        </div>
+    </div>
+
+    <script>
+        // Update current directory display
+        function updateCurrentDirectory() {
+            fetch('/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: 'pwd' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('current-directory').textContent = 'Current Directory: ' + data.output;
+            })
+            .catch(error => {
+                console.error('Error getting current directory:', error);
+            });
+        }
+
+        // Initialize current directory on page load
+        updateCurrentDirectory();
+
+        document.getElementById('commandForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const commandInput = document.getElementById('command');
+            const outputDiv = document.getElementById('output');
+            const command = commandInput.value.trim();
+            
+            if (!command) {
+                return;
+            }
+            
+            // Add to command history
+            addToHistory(command);
+            
+            // Show loading state
+            outputDiv.innerHTML = '<span class="success">Executing...</span>';
+            
+            try {
+                const response = await fetch('/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ command: command })
+                });
+                
+                const result = await response.json();
+                
+                // Update current directory after cd command
+                if (command.startsWith('cd')) {
+                    updateCurrentDirectory();
+                }
+                
+                if (result.error) {
+                    outputDiv.innerHTML = `<span class="error">Error: ${result.output}</span>`;
+                } else {
+                    outputDiv.innerHTML = `<span class="success">${result.output}</span>`;
+                }
+            } catch (error) {
+                outputDiv.innerHTML = `<span class="error">Network error: ${error.message}</span>`;
+            }
+            
+            // Clear input
+            commandInput.value = '';
+            // Focus back on input for next command
+            commandInput.focus();
+        });
+
+        // Add command to history
+        function addToHistory(command) {
+            const historyDiv = document.getElementById('command-history');
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.textContent = '> ' + command;
+            historyDiv.prepend(historyItem); // Add to top of history
+        }
+        
+        // Focus on input when page loads
+        window.addEventListener('load', function() {
+            document.getElementById('command').focus();
+        });
+    </script>
+</body>
+</html>
